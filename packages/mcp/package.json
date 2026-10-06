@@ -1,0 +1,61 @@
+{
+  "name": "@runno/mcp",
+  "version": "0.10.6",
+  "description": "MCP Server for the Runno Sandbox",
+  "keywords": [
+    "sandbox",
+    "mcp",
+    "code",
+    "ai"
+  ],
+  "author": "Ben Taylor <me@taybenlor.com>",
+  "homepage": "https://runno.dev",
+  "license": "MIT",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "mcpName": "io.github.taybenlor/runno",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taybenlor/runno.git"
+  },
+  "bin": {
+    "runno-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "start": "tsup && node dist/index.js",
+    "dev": "tsup && npx @modelcontextprotocol/inspector node dist/index.js"
+  },
+  "bugs": {
+    "url": "https://github.com/taybenlor/runno/issues"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.11.4",
+    "@runno/sandbox": "^0.10.3",
+    "zod-to-json-schema": "^3.24.5"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "^7.52.7",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.3"
+  }
+}
