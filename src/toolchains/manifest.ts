@@ -4,6 +4,8 @@ export interface ToolchainAsset {
   sha256: string
   /** Exact decoded response size in bytes. */
   size: number
+  /** Extract a tar or gzip-compressed tar into the virtual filesystem. */
+  archive?: 'tar' | 'tar.gz'
 }
 
 export interface ToolchainManifest {

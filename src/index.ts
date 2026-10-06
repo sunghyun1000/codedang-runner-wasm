@@ -7,5 +7,6 @@ export type { RunnerOptions, LanguageAdapter, LanguageContext, SessionState } fr
 export { ToolchainLoader } from './toolchains/loader'
 export type { LoaderOptions } from './toolchains/loader'
 export type { ToolchainManifest, ToolchainAsset } from './toolchains/manifest'
+export { codedangLanguages, cAdapter, cppAdapter, pythonAdapter } from './languages'
 export { runnoRuntime } from './runtime/runno'
 export type { WasiProgram, WasiRuntime, RunningProgram, WASIFS, WASIExecutionResult } from './runtime/runno'

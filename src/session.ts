@@ -2,6 +2,7 @@ import { errorText, type ServerMessage } from './protocol'
 import { StdinQueue } from './stdin-queue'
 import { ToolchainLoader, type LoaderOptions } from './toolchains/loader'
 import type { ToolchainManifest } from './toolchains/manifest'
+import { codedangLanguages } from './languages'
 import { runnoRuntime, type WasiProgram, type WasiRuntime, type WASIFS, type WASIExecutionResult } from './runtime/runno'
 
 export interface LanguageContext {
@@ -54,7 +55,7 @@ export class RunnerSession {
 
   async start(language: string, source: string): Promise<void> {
     if (this.state !== 'ready') throw new Error('Only one execution is allowed per connection')
-    const adapter = this.options.languages?.[language]
+    const adapter = this.options.languages?.[language] ?? codedangLanguages[language]
     if (!adapter) {
       this.fail(new Error(`Unsupported local language: ${language}`))
       return
@@ -83,7 +84,7 @@ export class RunnerSession {
           }, signal)
           // Observe the result before attempting EOF, so failures cannot go unhandled.
           const result = await Promise.all([process.result, process.eof()]).then(([result]) => result)
-          diagnostics += stdout
+          diagnostics += stdout + stderr
           if (result.exitCode !== 0) throw new CompileError(stderr || stdout || `Compiler exited with ${result.exitCode}`)
           return { ...result, stdout, stderr }
         }

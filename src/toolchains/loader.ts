@@ -1,4 +1,6 @@
 import type { WASIFS } from '../../runno/packages/wasi/lib/types'
+import { Tarball } from '@obsidize/tar-browserify'
+import { inflate } from 'pako'
 import { validateManifest, type ToolchainManifest } from './manifest'
 
 export interface LoaderOptions {
@@ -32,7 +34,9 @@ export class ToolchainLoader {
       }
       const base = this.options.assetBaseUrl
         ? new URL(this.options.assetBaseUrl, globalThis.location?.href).href
-        : globalThis.location?.href
+        : globalThis.location
+          ? new URL('/runno/langs/', globalThis.location.origin).href
+          : undefined
       const url = base ? new URL(asset.url, base) : new URL(asset.url)
       if (!['https:', 'http:'].includes(url.protocol)) throw new Error('Invalid asset URL')
       const key = new URL(url)
@@ -64,15 +68,44 @@ export class ToolchainLoader {
 
       signal.throwIfAborted()
       const date = new Date(0)
-      fs[asset.path] = {
-        path: asset.path,
-        mode: 'binary',
-        content: bytes,
-        timestamps: { access: date, modification: date, change: date }
+      if (asset.archive) {
+        const tar = asset.archive === 'tar.gz' ? inflate(bytes) : bytes
+        const entries = Tarball.extract(tar)
+        let expandedSize = 0
+        for (const entry of entries) {
+          if (!entry.isFile() || !entry.content) continue
+          const path = archivePath(entry.fileName)
+          expandedSize += entry.content.byteLength
+          if (expandedSize > (this.options.maxToolchainBytes ?? 512 * 1024 * 1024)) {
+            throw new Error('Extracted toolchain is too large')
+          }
+          const modified = new Date(entry.lastModified || 0)
+          fs[path] = {
+            path,
+            mode: 'binary',
+            content: entry.content,
+            timestamps: { access: modified, modification: modified, change: modified }
+          }
+        }
+      } else {
+        fs[asset.path] = {
+          path: asset.path,
+          mode: 'binary',
+          content: bytes,
+          timestamps: { access: date, modification: date, change: date }
+        }
       }
     }
     return fs
   }
+}
+
+function archivePath(name: string): string {
+  const parts = name.replaceAll('\\', '/').split('/').filter(Boolean)
+  if (!parts.length || parts.some(part => part === '.' || part === '..')) {
+    throw new Error(`Unsafe toolchain archive path: ${name}`)
+  }
+  return `/${parts.join('/')}`
 }
 
 async function verify(bytes: Uint8Array, expected: string): Promise<void> {
