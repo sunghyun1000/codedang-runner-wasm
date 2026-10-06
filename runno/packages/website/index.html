@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- prerender:meta -->
+
+    <title>Runno</title>
+
+    <link rel="preload" as="image" href="/images/github-yellow.png" />
+  </head>
+  <body
+    class="
+      font-tobias
+      text-black
+      bg-white
+      flex flex-col
+      justify-between
+      min-h-screen
+    "
+  >
+    <main>
+      <website-route route="^/$">
+        <page-home></page-home>
+      </website-route>
+      <website-route route="^/docs/$">
+        <page-docs></page-docs>
+      </website-route>
+      <website-route route="^/wasi/$">
+        <page-playground></page-playground>
+      </website-route>
+      <website-route route="^/articles">
+        <page-articles></page-articles>
+      </website-route>
+    </main>
+    <footer class="bg-lightGrey text-black">
+      <div class="container mx-auto py-8 font-sans px-4 sm:px-0">
+        <p>
+          A passion project by
+          <a class="text-pink" target="_blank" href="https://taybenlor.com"
+            >Ben Taylor</a
+          >
+          (<a
+            class="text-pink"
+            target="_blank"
+            href="https://aus.social/@taybenlor"
+            >@taybenlor@aus.social</a
+          >). The source is available
+          <a
+            class="text-pink"
+            target="_blank"
+            href="https://github.com/taybenlor/runno"
+            >on GitHub</a
+          >. Shoot me an email if you want to chat about Runno (<a
+            class="text-pink"
+            href="mailto:runno@taybenlor.com"
+            >runno@taybenlor.com</a
+          >).
+        </p>
+      </div>
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

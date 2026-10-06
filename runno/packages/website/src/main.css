@@ -1,0 +1,42 @@
+@font-face {
+  font-family: "MD IO";
+  src: url("https://assets.runno.dev/md-io/md-io-regular.woff2") format("woff2"),
+    url("https://assets.runno.dev/md-io/md-io-regular.woff") format("woff");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "MD IO";
+  src: url("https://assets.runno.dev/md-io/md-io-bold.woff2") format("woff2"),
+    url("https://assets.runno.dev/md-io/md-io-bold.woff") format("woff");
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "Tobias";
+  src: url("https://assets.runno.dev/tobias/tobias-regular.woff2")
+      format("woff2"),
+    url("https://assets.runno.dev/tobias/tobias-regular.woff") format("woff");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Tobias";
+  src: url("https://assets.runno.dev/tobias/tobias-regular-italic.woff2")
+      format("woff2"),
+    url("https://assets.runno.dev/tobias/tobias-regular-italic.woff")
+      format("woff");
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "Tobias";
+  src: url("https://assets.runno.dev/tobias/tobias-bold.woff2") format("woff2"),
+    url("https://assets.runno.dev/tobias/tobias-bold.woff") format("woff");
+  font-weight: 700;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

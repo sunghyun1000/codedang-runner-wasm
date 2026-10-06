@@ -1,0 +1,45 @@
+{
+  "private": "true",
+  "name": "@runno/website",
+  "description": "Runtime for @runno",
+  "version": "0.10.3",
+  "author": "Ben Taylor <runno@taybenlor.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/taybenlor/runno.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build:prerender": "node prerender.mjs",
+    "build:package": "tsc && vite build",
+    "build": "npm run build:package && npm run build:prerender",
+    "serve": "vite preview"
+  },
+  "devDependencies": {
+    "@runno/runtime": "^0.10.3",
+    "@runno/wasi": "^0.10.3",
+    "@tailwindcss/typography": "^0.5.4",
+    "@types/marked": "^4.0.7",
+    "autoprefixer": "^10.4.0",
+    "glob": "^10.3.3",
+    "js-untar": "^2.0.0",
+    "lit": "^2.7.6",
+    "marked": "^4.1.0",
+    "pako": "^1.0.11",
+    "postcss": "^8.4.27",
+    "tailwindcss": "^3.3.3",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.3",
+    "xterm": "^4.19.0",
+    "xterm-addon-fit": "^0.5.0",
+    "xterm-addon-web-links": "^0.6.0"
+  },
+  "gitHead": "812d21ec7c0c5d57c0274caaf7ff21c79ca79c1f"
+}

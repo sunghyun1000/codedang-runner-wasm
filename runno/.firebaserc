@@ -1,0 +1,17 @@
+{
+  "projects": {
+    "default": "make-run"
+  },
+  "targets": {
+    "make-run": {
+      "hosting": {
+        "client": [
+          "make-run"
+        ],
+        "website": [
+          "make-run-website"
+        ]
+      }
+    }
+  }
+}
