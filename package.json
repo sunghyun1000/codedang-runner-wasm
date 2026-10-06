@@ -1,0 +1,27 @@
+{
+  "name": "@codedang/browser-runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/browser-runner.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "npm run check && vite build && tsc --emitDeclarationOnly",
+    "test": "vitest run",
+    "test:browser": "npm run build && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "typescript": "~5.9.2",
+    "vite": "^6.3.3",
+    "vitest": "^5.0.3"
+  }
+}

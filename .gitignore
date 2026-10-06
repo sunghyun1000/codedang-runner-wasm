@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+
+# Test sources and configuration
+tests/
+playwright.config.ts
+vitest.config.ts

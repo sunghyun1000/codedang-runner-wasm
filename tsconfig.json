@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "types": ["vite/client"],
+    "noEmitOnError": true
+  },
+  "include": ["src", "runno/packages/wasi/lib"]
+}
