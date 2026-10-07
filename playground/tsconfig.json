@@ -6,5 +6,5 @@
     "baseUrl": ".",
     "paths": { "@/*": ["src/*"] }
   },
-  "include": ["src", "../src", "../runno/packages/wasi/lib"]
+  "include": ["src", "../src"]
 }

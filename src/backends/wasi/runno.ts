@@ -1,4 +1,4 @@
-import { WASIWorkerHost } from '../../../runno/packages/wasi/lib/worker/wasi-host'
+import { WASIWorkerHost } from '@runno/wasi'
 import type { Backend } from '../../core/types'
 import type { WasiProgram } from './types'
 

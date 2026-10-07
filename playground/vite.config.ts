@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 
-const toolchainDirectory = fileURLToPath(new URL('../runno/langs/', import.meta.url))
+const toolchainDirectory = fileURLToPath(new URL('../.toolchains/runno/', import.meta.url))
 const javaDirectory = fileURLToPath(new URL('../java/assets/', import.meta.url))
 const availableAssets = new Set([
   'python-3.11.3.wasm',
@@ -30,7 +30,7 @@ export default defineConfig({
   plugins: [tailwindcss(), {
     name: 'serve-runno-toolchains',
     configureServer(server) {
-      server.middlewares.use('/runno/langs', async (request, response, next) => {
+      server.middlewares.use('/toolchains', async (request, response, next) => {
         const name = path.basename(new URL(request.url ?? '/', 'http://localhost').pathname)
         if (!availableAssets.has(name)) return next()
         try {

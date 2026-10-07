@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "strict": true,
     "noUnusedParameters": true,
@@ -13,5 +14,5 @@
     "types": ["vite/client"],
     "noEmitOnError": true
   },
-  "include": ["src", "runno/packages/wasi/lib"]
+  "include": ["src"]
 }

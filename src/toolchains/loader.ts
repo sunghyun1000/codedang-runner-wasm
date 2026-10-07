@@ -4,6 +4,7 @@ import { inflate } from 'pako'
 import { validateManifest, type ToolchainManifest } from './manifest'
 
 export interface LoaderOptions {
+  /** Required for relative asset URLs; no backend-specific default is applied. */
   assetBaseUrl?: string
   /** Set false to disable Cache Storage. Cache failures do not block execution. */
   cache?: boolean
@@ -34,10 +35,10 @@ export class ToolchainLoader {
       }
       const base = this.options.assetBaseUrl
         ? new URL(this.options.assetBaseUrl, globalThis.location?.href).href
-        : globalThis.location
-          ? new URL('/runno/langs/', globalThis.location.origin).href
-          : undefined
-      const url = base ? new URL(asset.url, base) : new URL(asset.url)
+        : undefined
+      let url: URL
+      try { url = new URL(asset.url, base) }
+      catch { throw new Error('Invalid asset URL; relative URLs require assetBaseUrl') }
       if (!['https:', 'http:'].includes(url.protocol)) throw new Error('Invalid asset URL')
       const key = new URL(url)
       key.searchParams.set('__sha256', asset.sha256.toLowerCase())

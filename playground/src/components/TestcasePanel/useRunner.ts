@@ -29,7 +29,7 @@ const connectRunner = (
   onFinished: () => void
 ) => {
   const ws = createLocalRunnerConnection({
-    assetBaseUrl: new URL('/runno/langs/', location.origin).href,
+    assetBaseUrl: new URL('/toolchains/', location.origin).href,
     timeoutMs: 180_000
   })
   let currentInputBuffer = ''
