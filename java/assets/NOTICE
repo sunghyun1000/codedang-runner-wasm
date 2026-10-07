@@ -1,0 +1,6 @@
+javac extracted from Eclipse Temurin OpenJDK 17.0.20.1.
+Source: https://github.com/adoptium/jdk17u (jdk.compiler module).
+SOURCE revision: .:git:79597447bd94
+Corresponding source: https://github.com/adoptium/jdk17u/tree/79597447bd94/src/jdk.compiler
+Licensed under GPLv2 with the Classpath Exception. See accompanying license files.
+Rebuild with npm run build:java using the matching OpenJDK JDK.

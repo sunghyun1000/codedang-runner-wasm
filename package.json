@@ -13,6 +13,7 @@
     "dist"
   ],
   "scripts": {
+    "build:java": "node scripts/build-java-bridge.mjs",
     "dev:playground": "vite --config playground/vite.config.ts",
     "check": "tsc --noEmit",
     "build": "npm run check && vite build && tsc --emitDeclarationOnly",

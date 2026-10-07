@@ -11,7 +11,7 @@
       <header>
         <div>
           <p class="eyebrow">BROWSER RUNNER · PLAYGROUND</p>
-          <h1>WASI runner sandbox</h1>
+          <h1>Browser runner sandbox</h1>
           <p class="subtitle">Test the local connection, Worker, stdin and output without the Codedang frontend.</p>
         </div>
         <div class="actions">
@@ -21,7 +21,7 @@
       </header>
 
       <aside class="notice">
-        This playground uses Runno's bundled QuickJS WASI binary as a plumbing demo. It runs JavaScript, not the Codedang C/C++/Python toolchains; language adapters are not implemented yet.
+        C, C++ and Python use Runno WASI. Java 17 uses CheerpJ from its official CDN. Enter Java code in a Main class. Send EOF with Ctrl+D in the stdin field.
       </aside>
 
       <section class="workspace">
@@ -32,9 +32,10 @@
               <option value="C">C · C11</option>
               <option value="Cpp">C++ · C++14</option>
               <option value="Python3">Python 3 · 3.11</option>
+              <option value="Java">Java · 17 (CheerpJ)</option>
             </select>
           </div>
-          <textarea id="source" spellcheck="false" aria-label="JavaScript source"></textarea>
+          <textarea id="source" spellcheck="false" aria-label="Source code"></textarea>
         </div>
         <div class="panel terminal-panel">
           <div class="panel-title"><span>Output</span><span id="status" class="status">Ready</span></div>

@@ -15,7 +15,8 @@ const inputForm = document.querySelector<HTMLFormElement>('#input-form')!
 const examples: Record<string, string> = {
   C: `#include <stdio.h>\n\nint main(void) {\n  printf("Hello from C!\\n");\n  return 0;\n}`,
   Cpp: `#include <iostream>\n\nint main() {\n  std::cout << "Hello from C++!\\n";\n  return 0;\n}`,
-  Python3: `print("Hello from Python 3!")`
+  Python3: `print("Hello from Python 3!")`,
+  Java: `import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println("Hello from Java 17! Enter your name:");\n    Scanner input = new Scanner(System.in);\n    if (input.hasNextLine()) {\n      System.out.println("Hello, " + input.nextLine() + "!");\n    }\n  }\n}`
 }
 
 source.value = examples[language.value]
@@ -70,6 +71,13 @@ runButton.addEventListener('click', async () => {
 })
 
 stopButton.addEventListener('click', () => connection?.send('{"type":"exit"}'))
+
+input.addEventListener('keydown', event => {
+  if (event.ctrlKey && event.key.toLowerCase() === 'd') {
+    event.preventDefault()
+    if (connection?.readyState === 1) connection.closeStdin()
+  }
+})
 
 inputForm.addEventListener('submit', event => {
   event.preventDefault()
