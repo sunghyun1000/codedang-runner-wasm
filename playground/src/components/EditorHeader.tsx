@@ -6,19 +6,19 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './shadcn/tooltip'
 import type { Language } from '../types/type'
 
-export function EditorHeader({ language, setLanguage, run, running }: {
-  language: Language; setLanguage(language: Language): void; run(): void; running: boolean
+export function EditorHeader({ language, setLanguage, run, running, preparing = false }: {
+  language: Language; setLanguage(language: Language): void; run(): void; running: boolean; preparing?: boolean
 }) {
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault()
-        if (!running) run()
+        if (!running && !preparing) run()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [run, running])
+  }, [run, running, preparing])
 
   return (
     <div className="bg-editor-background-2 flex shrink-0 items-center justify-between border-b border-slate-700 px-6">
@@ -39,8 +39,8 @@ export function EditorHeader({ language, setLanguage, run, running }: {
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button id="run" size="editor" variant="editor" className="border-none bg-[#D7E5FE] text-[#484C4D] hover:bg-[#c6d3ea]" onClick={run} disabled={running}>
-                <IoPlayCircleOutline size={22} />{running ? 'Running…' : 'Run'}
+              <Button id="run" size="editor" variant="editor" className="border-none bg-[#D7E5FE] text-[#484C4D] hover:bg-[#c6d3ea]" onClick={run} disabled={running || preparing}>
+                <IoPlayCircleOutline size={22} />{running ? 'Running…' : preparing ? 'Preparing…' : 'Run'}
               </Button>
             </TooltipTrigger>
             <TooltipContent>Ctrl/Cmd + Enter | Run your code in interactive terminal.</TooltipContent>

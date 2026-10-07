@@ -24,6 +24,11 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   esbuild: { jsx: 'automatic' },
   worker: { format: 'es' },
+  // These are first discovered through dynamic terminal imports / the Java Worker.
+  // Discovering them after Run can make Vite re-optimize and reload the entire page.
+  optimizeDeps: {
+    include: ['@xterm/xterm', '@xterm/addon-fit', '@obsidize/tar-browserify', 'pako', '@runno/wasi']
+  },
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',

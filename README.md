@@ -43,8 +43,47 @@ Java 컴파일러는 ECJ 3.38.0을 사용합니다. 준비 단계에서 Maven Ce
 `assetBaseUrl` 아래에 같은 상대 경로로 게시합니다.
 CheerpJ의 fetch 기반 런타임 자산도 `ToolchainLoader`가 관리합니다. 동일 URL·Range 응답은
 별도 Cache Storage에 보관하여 컴파일·실행 Worker와 이후 실행에서 재사용합니다.
-전체 런타임 사전 다운로드는 아니며, `cache: false`로 비활성화할 수 있습니다.
+`ToolchainPrefetcher`로 Java 17 표준 라이브러리 전체를 사전 캐시하면 Range 요청도
+그 파일에서 제공합니다. `cache: false`로 실행 중 캐시를 비활성화할 수 있습니다.
 S3 게시 workflow와 Bridge 재생성은 [src/languages/java/README.md](src/languages/java/README.md)를 참고합니다.
+
+## 브라우저 자산 사전 캐시 API
+
+```ts
+import { ToolchainPrefetcher } from '@codedang/browser-runner'
+
+const prefetcher = new ToolchainPrefetcher({ assetBaseUrl: '/toolchains/' })
+
+// await하지 않아도 다운로드는 백그라운드에서 진행됩니다.
+const result = await prefetcher.prefetch({
+  selectedLanguage: 'Java',
+  availableLanguages: ['C', 'Cpp', 'Java', 'Python3']
+})
+console.log(result.completed, result.errors)
+
+// 언어 변경 시 같은 인스턴스로 다시 호출하면 대기 중인 언어 순서를 변경합니다.
+// 페이지를 떠날 때는 prefetcher.dispose()로 중단합니다.
+```
+
+선택 언어 → 사용 가능한 언어 → 나머지 내장 언어 순으로 순차 다운로드합니다.
+진행 중인 언어는 완료한 뒤 다음 우선순위를 적용하며, C/C++ 공용 자산은 한 번만 준비합니다.
+아카이브는 압축 상태로 저장하고 실행할 때 해제합니다. 캐시의 실제 크기·SHA-256이
+manifest와 같으면 유지하고, 없거나 손상되었거나 manifest 해시가 바뀌면 다시 다운로드합니다.
+다운로드 결과도 검증하며, 일치하지 않는 파일은 저장하지 않습니다.
+
+CheerpJ 자산 목록·해시는 `src/toolchains/cheerpj-manifest.ts`에 고정합니다.
+다른 버전으로 갱신할 때는 이 manifest도 함께 갱신해야 합니다. 전체 Java 17 표준 라이브러리는
+약 36.4 MiB이며 모든 내장 언어를 처음 준비하면 약 118 MiB를 다운로드합니다.
+GUI·폰트 등 콘솔 실행 manifest 밖의 CheerpJ 리소스는 필요 시 기존 네트워크 경로를 사용합니다.
+JS import/importScripts와 XMLHttpRequest는 브라우저 HTTP 캐시를 사용하므로 완전한 오프라인
+실행을 보장하는 API는 아닙니다.
+
+사전 준비는 Cache Storage 사용 가능한 보안 컨텍스트(HTTPS 또는 localhost)가 필요합니다.
+저장 공간 부족 등은 `result.errors`에 반환하고 다른 언어 준비는 계속합니다.
+`onStatus` 콜백으로 언어별 `preparing`, `ready`, `error` 상태를 받을 수 있습니다.
+플레이그라운드는 이 API를 언어 선택과 연결하고 선택 언어의 준비 중에는 Run을 비활성화합니다.
+기존 실행 API는 캐시 실패 시에도
+네트워크에서 실행 자산을 받아 사용할 수 있습니다.
 
 ## 버전 갱신 및 검증
 

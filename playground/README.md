@@ -4,6 +4,13 @@
 `npm run build:playground`로 UI 번들 빌드를 확인할 수 있습니다.
 `npm run test:playground`로 에디터 UI, 실행, stdin/EOF, 중단·재실행을 확인합니다.
 Java 테스트에는 CheerpJ 공식 CDN 접속이 필요합니다.
+페이지 진입과 언어 선택 시 `ToolchainPrefetcher`가 실행 전에 자산을 사전 캐시합니다.
+선택 언어를 준비하는 동안 `Preparing…`를 표시하고 Run을 비활성화합니다.
+준비 실패 시 상태 표시와 콘솔에서 오류를 확인할 수 있으며 Run은 네트워크 경로로 실행합니다.
+캐시가 이미 유효하면 네트워크 요청 없이 검증만 수행합니다. 자산 준비와 JVM 초기화는
+별개이므로 캐시 준비 완료 후에도 Run 시 CheerpJ 초기화 비용은 남습니다.
+Vite는 터미널·Java Worker 의존성을 `optimizeDeps.include`로 미리 최적화하여 첫 실행 중
+새 의존성 발견에 따른 개발 서버 재최적화·페이지 새로고침을 방지합니다.
 프로덕션 배포 시 `/toolchains/`에 WASI·Java 공용 toolchain 자산을 별도로 제공하고 COOP/COEP 헤더를 설정해야 합니다.
 `dev:playground`와 `build:playground`는 npm의 `@runno/sandbox` 자산을 검증하고
 `.toolchains/runno/`에 준비합니다. Runno 자산의 npm 공급 패키지는 개발 의존성이며,

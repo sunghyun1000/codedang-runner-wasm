@@ -1,12 +1,8 @@
 import { afterEach, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
-import ts from 'typescript'
+import { importTestModule } from './import-test-module.mjs'
 
-// Keep the Node test suite compatible with Node 22 releases without native TS support.
-const source = await readFile(new URL('../src/toolchains/runtime-cache.ts', import.meta.url), 'utf8')
-const { outputText } = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext } })
-const { createRuntimeFetch } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`)
+const { createRuntimeFetch } = await importTestModule('../src/toolchains/runtime-cache.ts')
 
 const loader = 'https://runtime.example/4.3/loader.js'
 const url = 'https://runtime.example/4.3/17/lib/modules'
@@ -119,6 +115,7 @@ test('repairs invalid cached metadata instead of returning a broken partial resp
   const entries = storage()
   const key = new URL(url)
   key.searchParams.set('__codedang_range', 'bytes=0-3')
+  key.searchParams.set('__sha256', 'f121f2dd8164921c36ece441d0ad17043ad3067a698a35ff0b58328cabe93ff7')
   entries.set(key.href, new Response('bad', { headers: { 'x-codedang-status': '206', 'x-codedang-url': url } }))
   let calls = 0
   const response = await createRuntimeFetch(loader, {}, async () => { calls++; return partial() })(url, {
@@ -126,4 +123,35 @@ test('repairs invalid cached metadata instead of returning a broken partial resp
   })
   assert.equal(await response.text(), 'abcd')
   assert.equal(calls, 1)
+})
+
+test('serves arbitrary ranges from a hash-verified whole runtime file without network requests', async () => {
+  const entries = storage()
+  const file = 'https://runtime.example/4.3/etc/users'
+  const key = new URL(file)
+  key.searchParams.set('__sha256', 'ba22ff21f2d73daf148452051c728541389dc0f91420b4f3bb371bd025362810')
+  entries.set(key.href, new Response('user:x:1000:1000:user:/files:/dev/null\n'))
+  const fetch = createRuntimeFetch(loader, {}, async () => { throw new Error('unexpected network request') })
+  const response = await fetch(file, { headers: { Range: 'bytes=0-3' } })
+  assert.equal(response.status, 206)
+  assert.equal(response.url, file)
+  assert.equal(response.headers.get('content-range'), 'bytes 0-3/39')
+  assert.equal(await response.text(), 'user')
+  assert.equal(await (await fetch(file, { headers: { Range: 'bytes=-5' } })).text(), 'null\n')
+  assert.equal(await (await fetch(file, { headers: { Range: 'bytes=34-' } })).text(), 'null\n')
+  assert.equal((await fetch(file, { headers: { Range: 'bytes=39-40' } })).status, 416)
+  assert.equal((await fetch(file, { headers: { Range: 'bytes=0-1,3-4' } })).status, 416)
+  assert.equal(await (await fetch(file)).text(), 'user:x:1000:1000:user:/files:/dev/null\n')
+})
+
+test('rejects a corrupt whole runtime asset and falls back to the network', async () => {
+  const entries = storage()
+  const file = 'https://runtime.example/4.3/etc/users'
+  const key = new URL(file)
+  key.searchParams.set('__sha256', 'ba22ff21f2d73daf148452051c728541389dc0f91420b4f3bb371bd025362810')
+  entries.set(key.href, new Response('corrupt'))
+  let calls = 0
+  await createRuntimeFetch(loader, {}, async () => { calls++; return new Response('fallback') })(file)
+  assert.equal(calls, 1)
+  assert.equal(entries.has(key.href), false)
 })

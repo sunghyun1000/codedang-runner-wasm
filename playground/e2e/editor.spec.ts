@@ -76,13 +76,42 @@ test('Java compiles and receives interactive stdin through CheerpJ', async ({ pa
   await expect(page.locator('#runner-container')).toContainText('Hello, Codedang!')
   await expect(page.locator('#runner-container')).toContainText('Process ended with exit code: 0')
   expect(phase).toBe(2)
-  expect(compilerRanges.size).toBeGreaterThan(0)
   expect(repeatedRuntimeRanges).toEqual([])
   const cachedRanges = await page.evaluate(async () => {
     const cache = await caches.open('codedang-cheerpj-runtime-v1')
-    return (await cache.keys()).filter(request => request.url.includes('/17/lib/modules')).length
+    const fullCache = await caches.open('codedang-toolchains-v1')
+    return [...await cache.keys(), ...await fullCache.keys()].filter(request => request.url.includes('/17/lib/modules')).length
   })
   expect(cachedRanges).toBeGreaterThan(0)
+})
+
+test('Java uses the prefetched whole standard library for Range requests', async ({ page }) => {
+  let reloads = 0
+  page.on('framenavigated', frame => { if (frame === page.mainFrame()) reloads++ })
+  await selectLanguage(page, 'Java')
+  await expect.poll(() => page.evaluate(async () => {
+    const cache = await caches.open('codedang-toolchains-v1')
+    return (await cache.keys()).some(request => request.url.includes('/4.3/17/lib/modules?__sha256='))
+  }), { timeout: 120_000 }).toBe(true)
+  let moduleDownloads = 0
+  page.on('request', request => {
+    if (request.url().endsWith('/4.3/17/lib/modules')) moduleDownloads++
+  })
+  await setSource(page, 'public class Main { public static void main(String[] args) { System.out.println("PREFETCH_READY"); } }')
+  await page.locator('#run').click()
+  await expect(page.locator('#runner-container')).toContainText('PREFETCH_READY')
+  await expect(page.locator('#runner-container')).toContainText('Process ended with exit code: 0')
+  expect(moduleDownloads).toBe(0)
+  expect(reloads).toBe(0)
+})
+
+test('starts Java asset downloads on selection without Run', async ({ page }) => {
+  const requests: string[] = []
+  page.on('request', request => requests.push(request.url()))
+  await selectLanguage(page, 'Java')
+  await expect.poll(() => requests.some(url => url.includes('/ecj/') && url.endsWith('/ecj.jar'))).toBe(true)
+  await expect.poll(() => requests.some(url => url.endsWith('/4.3/17/lib/modules'))).toBe(true)
+  await expect(page.locator('#runner-container')).not.toContainText('Connecting to the runner')
 })
 
 test('ECJ compiles Java 17 records, nested classes and lambda expressions', async ({ page }) => {

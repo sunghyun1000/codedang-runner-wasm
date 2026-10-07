@@ -37,11 +37,17 @@ CheerpJ의 fetch 기반 런타임 요청을 loader URL의 디렉터리 범위에
 인자로 캐시 설정과 응답별 `maxAssetBytes`를 전달한다. 저장소 사용 불가·용량 초과 시에는
 원래 네트워크 응답으로 계속 실행한다.
 
-이는 런타임 전체 사전 다운로드나 JVM 재사용이 아니라 요청된 구간의 영속 캐시다.
-서로 다른 Range를 합치거나 포함 관계를 계산하지 않는다. `importScripts`로 로딩하는
-로더·JS 파일 및 XMLHttpRequest는 기존 브라우저 HTTP 캐시를 사용한다.
-ECJ와 달리 CheerpJ 자산에는 프로젝트의 고정 SHA-256 manifest를 적용하지 않으며,
-공식 CDN의 HTTPS·버전별 URL에 의존한다. 캐시는 브라우저가 삭제할 수 있다.
+`ToolchainPrefetcher`는 `src/toolchains/cheerpj-manifest.ts`의 크기·SHA-256으로
+콘솔 실행용 런타임 자산과 Java 17 `modules` 전체를 검증해 `codedang-toolchains-v1`에 저장한다.
+Worker는 전체 파일 캐시가 있으면 해시를 검증한 뒤 필요한 구간을 잘라 206 응답으로 제공한다.
+같은 Worker에서는 검증된 전체 파일을 메모리에서 재사용한다. 전체 파일이 없으면 기존
+Range 캐시·네트워크로 대체한다. 알려진 자산의 Range 키에도 manifest 해시를 포함한다.
+JVM 재사용이나 서로 다른 부분 응답의 병합은 하지 않는다.
+
+JS import/importScripts 및 XMLHttpRequest는 기존 브라우저 HTTP 캐시를 사용한다.
+GUI·폰트 등 manifest 밖의 추가 리소스까지 포함하는 완전한 오프라인 실행은 보장하지 않는다.
+다른 loader URL은 고정된 CheerpJ 4.3 자산의 미러여야 하며 버전 변경 시 manifest 갱신이 필요하다.
+브라우저는 저장한 캐시를 삭제할 수 있다.
 
 ```ts
 createLocalRunnerConnection({

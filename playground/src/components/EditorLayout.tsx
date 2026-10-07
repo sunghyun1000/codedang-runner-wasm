@@ -1,5 +1,6 @@
 // Run-only adaptation of Codedang's EditorLayout / EditorResizablePanel.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { ToolchainPrefetcher, type PrefetchStatus } from '../../../src'
 import { toast } from 'sonner'
 import { CodeEditor } from './CodeEditor'
 import { EditorHeader } from './EditorHeader'
@@ -20,8 +21,23 @@ const examples: Record<Language, string> = {
 export function EditorLayout() {
   const [language, setLanguage] = useState<Language>('Cpp')
   const [sources, setSources] = useState(examples)
+  const [preparation, setPreparation] = useState<Record<string, PrefetchStatus>>({})
+  const [prefetcher] = useState(() => new ToolchainPrefetcher({
+    onStatus: status => setPreparation(previous => ({ ...previous, [status.language]: status }))
+  }))
+  useEffect(() => {
+    void prefetcher.prefetch({ selectedLanguage: language, availableLanguages: Object.keys(examples) })
+      .then(result => {
+        if (Object.keys(result.errors).length) console.warn('Toolchain prefetch failed', result.errors)
+      })
+      .catch(error => { if (error?.name !== 'AbortError') console.warn('Toolchain prefetch failed', error) })
+  }, [language, prefetcher])
+  useEffect(() => () => prefetcher.dispose(), [prefetcher])
   const { startRunner, running } = useRunner()
+  const selectedPreparation = preparation[language]
+  const preparing = !selectedPreparation || selectedPreparation.state === 'preparing'
   const run = () => {
+    if (preparing || running) return
     if (!sources[language].trim()) { toast.error('Please write code before run'); return }
     void startRunner(sources[language], language).catch(error => toast.error(String(error)))
   }
@@ -58,7 +74,7 @@ export function EditorLayout() {
         <ResizableHandle className="border-[0.5px] border-slate-700" />
         <ResizablePanel defaultSize={65} minSize={40}>
           <div className="grid-rows-editor grid h-full">
-            <EditorHeader language={language} setLanguage={setLanguage} run={run} running={running} />
+            <EditorHeader language={language} setLanguage={setLanguage} run={run} running={running} preparing={preparing} />
             <ResizablePanelGroup direction="vertical">
               <ResizablePanel defaultSize={60} minSize={20}>
                 <CodeEditor value={sources[language]} language={language} onChange={code => setSources(prev => ({ ...prev, [language]: code }))} showZoom aria-label="Source code" />
@@ -67,7 +83,9 @@ export function EditorLayout() {
               <ResizablePanel defaultSize={40} minSize={20}>
                 <div className="flex h-12 items-center bg-[#121728]">
                   <span className="flex h-full w-40 items-center justify-center gap-2 bg-[#222939]">Run Code<span className="rounded bg-blue-950 px-2 text-[10px] text-blue-300">Local</span></span>
-                  <span className="flex-1 px-4 text-right text-xs text-slate-400" role="status">{running ? 'Running' : 'Ready'}</span>
+                  <span className="flex-1 px-4 text-right text-xs text-slate-400" role="status" title={selectedPreparation?.error}>
+                    {running ? 'Running' : preparing ? `Preparing ${language} assets…` : selectedPreparation?.state === 'error' ? 'Asset preparation failed · Run uses network' : 'Assets cached · Ready'}
+                  </span>
                 </div>
                 <RunnerTab />
               </ResizablePanel>

@@ -22,6 +22,15 @@ export class ToolchainLoader {
   }
 
   async load(manifest: ToolchainManifest, signal: AbortSignal): Promise<FileSystem> {
+    return this.prepare(manifest, signal, true)
+  }
+
+  /** Verify/store the original assets without extracting archives or constructing a filesystem. */
+  async prefetch(manifest: ToolchainManifest, signal: AbortSignal): Promise<void> {
+    await this.prepare(manifest, signal, false)
+  }
+
+  private async prepare(manifest: ToolchainManifest, signal: AbortSignal, extract: boolean): Promise<FileSystem> {
     validateManifest(manifest)
     const total = manifest.assets.reduce((sum, asset) => sum + asset.size, 0)
     if (total > (this.options.maxToolchainBytes ?? 512 * 1024 * 1024)) {
@@ -32,6 +41,7 @@ export class ToolchainLoader {
     if (this.options.cache !== false && typeof caches !== 'undefined') {
       try { cache = await caches.open('codedang-toolchains-v1') } catch { /* Optional cache. */ }
     }
+    if (!extract && !cache) throw new Error('Prefetch requires available Cache Storage')
 
     const fs: FileSystem = {}
     for (const asset of manifest.assets) {
@@ -70,10 +80,14 @@ export class ToolchainLoader {
         signal.throwIfAborted()
         try {
           await cache?.put(key.href, new Response(bytes as Uint8Array<ArrayBuffer>))
-        } catch { /* Quota and storage failures do not block execution. */ }
+        } catch (error) {
+          if (!extract) throw error
+          // Quota and storage failures do not block execution.
+        }
       }
 
       signal.throwIfAborted()
+      if (!extract) continue
       const date = new Date(0)
       if (asset.archive) {
         const tar = asset.archive === 'tar.gz' ? inflate(bytes) : bytes
