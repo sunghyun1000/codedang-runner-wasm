@@ -1,4 +1,4 @@
-import type { LanguageAdapter } from '../session'
+import type { LanguageAdapter } from '../core/types'
 import { cAdapter } from './c'
 import { cppAdapter } from './cpp'
 import { pythonAdapter } from './python3'

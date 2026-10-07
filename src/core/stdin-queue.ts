@@ -1,7 +1,4 @@
-export interface StdinTarget {
-  write(data: string): Promise<void>
-  eof(): Promise<void>
-}
+import type { StdinTarget } from './types'
 
 /** Buffers input before execution and allows only one writer at a time. */
 export class StdinQueue {
@@ -52,8 +49,11 @@ export class StdinQueue {
     try {
       while (this.chunks.length && !this.closed) {
         const bytes = this.chunks[0]
-        // Runno reserves four bytes of its 8 KiB stdin buffer for the length.
-        let length = Math.min(bytes.length, 8192 - 4)
+        const chunkBytes = target.stdinChunkBytes ?? 64 * 1024
+        if (!Number.isSafeInteger(chunkBytes) || chunkBytes < 4) {
+          throw new Error('Invalid backend stdin chunk size')
+        }
+        let length = Math.min(bytes.length, chunkBytes)
         while (length < bytes.length && (bytes[length] & 0xc0) === 0x80) length--
         await target.write(new TextDecoder().decode(bytes.subarray(0, length)))
         if (this.closed) return

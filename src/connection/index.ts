@@ -1,5 +1,8 @@
 import { parseMessage, errorText, type ServerMessage } from './protocol'
-import { RunnerSession, type RunnerOptions } from './session'
+import { RunnerSession } from '../core/runner'
+import type { RunnerOptions } from '../core/types'
+import { codedangLanguages } from '../languages'
+import { runnoBackend } from '../backends/wasi/runno'
 
 export const ConnectionState = { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 } as const
 
@@ -24,7 +27,11 @@ class LocalRunnerConnection implements RunnerConnection {
   private readonly session: RunnerSession
 
   constructor(options: RunnerOptions) {
-    this.session = new RunnerSession(options, message => this.deliver(message), () => this.closed())
+    this.session = new RunnerSession({
+      ...options,
+      languages: { ...codedangLanguages, ...options.languages },
+      backends: { wasi: runnoBackend, ...options.backends }
+    }, message => this.deliver(message), () => this.closed())
     queueMicrotask(() => {
       if (this.readyState !== ConnectionState.CONNECTING) return
       this.readyState = ConnectionState.OPEN

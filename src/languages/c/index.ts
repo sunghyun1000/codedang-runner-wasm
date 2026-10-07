@@ -1,5 +1,6 @@
-import type { WASIFile, WASIFS } from '../../../runno/packages/wasi/lib/types'
-import type { LanguageAdapter } from '../../session'
+import type { LanguageAdapter } from '../../core/types'
+import { wasiProgram } from '../../backends/wasi/types'
+import { requireBinary, withSource } from '../files'
 import { runnoClang8 } from '../toolchains'
 
 const C_SOURCE = '/main.c'
@@ -15,7 +16,7 @@ export const cAdapter: LanguageAdapter = {
     const files = withSource(fs, C_SOURCE, source)
     const clang = requireBinary(files, '/clang.wasm')
 
-    const compiled = await execute({
+    const compiled = await execute(wasiProgram({
       binary: clang,
       args: [
         'clang', '-cc1', '-Werror', '-triple', 'wasm32-unknown-wasi',
@@ -26,11 +27,11 @@ export const cAdapter: LanguageAdapter = {
         '-o', OBJECT, C_SOURCE
       ],
       fs: files
-    })
+    }))
     signal.throwIfAborted()
 
     const linker = requireBinary(compiled.fs, '/wasm-ld.wasm')
-    const linked = await execute({
+    const linked = await execute(wasiProgram({
       binary: linker,
       args: [
         'wasm-ld', '--no-threads', '--export-dynamic', '-z',
@@ -38,26 +39,7 @@ export const cAdapter: LanguageAdapter = {
         '/sys/lib/wasm32-wasi/crt1.o', OBJECT, '-lc', '-lm', '-o', OUTPUT
       ],
       fs: compiled.fs
-    })
-    return executable(linked.fs, OUTPUT)
+    }))
+    return wasiProgram({ binary: requireBinary(linked.fs, OUTPUT), fs: {} })
   }
-}
-
-export function withSource(fs: WASIFS, path: string, source: string): WASIFS {
-  const now = new Date()
-  const file: WASIFile = {
-    path, mode: 'string', content: source,
-    timestamps: { access: now, modification: now, change: now }
-  }
-  return { ...fs, [path]: file }
-}
-
-export function requireBinary(fs: WASIFS, path: string): Uint8Array {
-  const file = fs[path]
-  if (!file || file.mode !== 'binary') throw new Error(`Toolchain binary missing: ${path}`)
-  return file.content
-}
-
-export function executable(fs: WASIFS, path: string) {
-  return { binary: requireBinary(fs, path), fs: {} }
 }

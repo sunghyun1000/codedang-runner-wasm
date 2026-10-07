@@ -1,34 +1,9 @@
-import { errorText, type ServerMessage } from './protocol'
+import { errorText, CompileError } from './errors'
 import { StdinQueue } from './stdin-queue'
-import { ToolchainLoader, type LoaderOptions } from './toolchains/loader'
-import type { ToolchainManifest } from './toolchains/manifest'
-import { codedangLanguages } from './languages'
-import { runnoRuntime, type WasiProgram, type WasiRuntime, type WASIFS, type WASIExecutionResult } from './runtime/runno'
+import { ToolchainLoader } from '../toolchains/loader'
+import type { RunnerOptions, SessionState, Program, Output, RunnerEvent } from './types'
 
-export interface LanguageContext {
-  fs: WASIFS
-  signal: AbortSignal
-  /** Runs a compiler/helper with EOF on stdin; diagnostics are bounded. */
-  execute(program: WasiProgram): Promise<WASIExecutionResult & { stdout: string; stderr: string }>
-}
-
-export interface LanguageAdapter {
-  kind: 'compiled' | 'interpreted'
-  toolchain?: ToolchainManifest
-  prepare(source: string, context: LanguageContext): Promise<WasiProgram>
-}
-
-export interface RunnerOptions extends LoaderOptions {
-  languages?: Readonly<Record<string, LanguageAdapter>>
-  runtime?: WasiRuntime
-  timeoutMs?: number
-  maxOutputBytes?: number
-  maxInputBytes?: number
-}
-
-export type SessionState = 'ready' | 'preparing' | 'compiling' | 'running' | 'finished'
-
-export class CompileError extends Error {}
+export { CompileError } from './errors'
 
 export class RunnerSession {
   state: SessionState = 'ready'
@@ -39,7 +14,7 @@ export class RunnerSession {
 
   constructor(
     private readonly options: RunnerOptions,
-    private readonly emit: (message: ServerMessage) => void,
+    private readonly emit: (message: RunnerEvent) => void,
     private readonly onClose: () => void
   ) {
     this.input = new StdinQueue(error => this.fail(error), options.maxInputBytes)
@@ -55,7 +30,7 @@ export class RunnerSession {
 
   async start(language: string, source: string): Promise<void> {
     if (this.state !== 'ready') throw new Error('Only one execution is allowed per connection')
-    const adapter = this.options.languages?.[language] ?? codedangLanguages[language]
+    const adapter = this.options.languages?.[language]
     if (!adapter) {
       this.fail(new Error(`Unsupported local language: ${language}`))
       return
@@ -63,7 +38,6 @@ export class RunnerSession {
     this.state = 'preparing'
     this.timer = setTimeout(() => this.fail(new Error('Time limit exceeded')), this.options.timeoutMs ?? 180_000)
     const signal = this.controller.signal
-    const runtime = this.options.runtime ?? runnoRuntime
     try {
       const fs = adapter.toolchain
         ? await new ToolchainLoader(this.options).load(adapter.toolchain, signal)
@@ -78,10 +52,10 @@ export class RunnerSession {
         execute: async program => {
           let stdout = ''
           let stderr = ''
-          const process = runtime.start(program, {
+          const process = this.launch(program, {
             stdout: text => { if (this.countOutput(text)) stdout += text },
             stderr: text => { if (this.countOutput(text)) stderr += text }
-          }, signal)
+          })
           // Observe the result before attempting EOF, so failures cannot go unhandled.
           const result = await Promise.all([process.result, process.eof()]).then(([result]) => result)
           diagnostics += stdout + stderr
@@ -92,10 +66,10 @@ export class RunnerSession {
       signal.throwIfAborted()
       if (adapter.kind === 'compiled') this.emit({ type: 'compile_success', stdout: diagnostics })
       this.state = 'running'
-      const process = runtime.start(program, {
+      const process = this.launch(program, {
         stdout: data => this.output('stdout', data),
         stderr: data => this.output('stderr', data)
-      }, signal)
+      })
       this.input.attach(process)
       const result = await process.result
       this.finish({ type: 'exit', return_code: result.exitCode })
@@ -110,6 +84,13 @@ export class RunnerSession {
 
   /** Closing the transport silently stops its execution. */
   close(): void { this.finish() }
+
+  private launch(program: Program, output: Output) {
+    this.controller.signal.throwIfAborted()
+    const backend = this.options.backends?.[program.backend]
+    if (!backend) throw new Error(`Unsupported backend: ${program.backend}`)
+    return backend.start(program.payload, output, this.controller.signal)
+  }
 
   private countOutput(text: string): boolean {
     if (this.state === 'finished') return false
@@ -133,7 +114,7 @@ export class RunnerSession {
       : { type: 'error', error: errorText(error) })
   }
 
-  private finish(message?: ServerMessage): void {
+  private finish(message?: RunnerEvent): void {
     if (this.state === 'finished') return
     this.state = 'finished'
     clearTimeout(this.timer)

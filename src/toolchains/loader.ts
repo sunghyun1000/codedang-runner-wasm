@@ -1,4 +1,4 @@
-import type { WASIFS } from '../../runno/packages/wasi/lib/types'
+import type { FileSystem } from '../core/types'
 import { Tarball } from '@obsidize/tar-browserify'
 import { inflate } from 'pako'
 import { validateManifest, type ToolchainManifest } from './manifest'
@@ -14,7 +14,7 @@ export interface LoaderOptions {
 export class ToolchainLoader {
   constructor(private readonly options: LoaderOptions = {}) {}
 
-  async load(manifest: ToolchainManifest, signal: AbortSignal): Promise<WASIFS> {
+  async load(manifest: ToolchainManifest, signal: AbortSignal): Promise<FileSystem> {
     validateManifest(manifest)
     const total = manifest.assets.reduce((sum, asset) => sum + asset.size, 0)
     if (total > (this.options.maxToolchainBytes ?? 512 * 1024 * 1024)) {
@@ -26,7 +26,7 @@ export class ToolchainLoader {
       try { cache = await caches.open('codedang-toolchains-v1') } catch { /* Optional cache. */ }
     }
 
-    const fs: WASIFS = {}
+    const fs: FileSystem = {}
     for (const asset of manifest.assets) {
       signal.throwIfAborted()
       if (asset.size > (this.options.maxAssetBytes ?? 128 * 1024 * 1024)) {

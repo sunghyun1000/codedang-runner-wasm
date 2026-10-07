@@ -1,32 +1,14 @@
-import { WASIWorkerHost } from '../../runno/packages/wasi/lib/worker/wasi-host'
-import type { WASIExecutionResult, WASIFS } from '../../runno/packages/wasi/lib/types'
-import type { StdinTarget } from '../stdin-queue'
+import { WASIWorkerHost } from '../../../runno/packages/wasi/lib/worker/wasi-host'
+import type { Backend } from '../../core/types'
+import type { WasiProgram } from './types'
 
-export type { WASIFS, WASIExecutionResult }
-
-export interface WasiProgram {
-  binary: Uint8Array
-  fs?: WASIFS
-  args?: string[]
-  env?: Record<string, string>
-  isTTY?: boolean
-}
-
-export interface RunningProgram extends StdinTarget {
-  result: Promise<WASIExecutionResult>
-}
-
-export interface WasiRuntime {
-  start(
-    program: WasiProgram,
-    output: { stdout: (text: string) => void; stderr: (text: string) => void },
-    signal: AbortSignal
-  ): RunningProgram
-}
-
-export const runnoRuntime: WasiRuntime = {
-  start(program, output, signal) {
+export const runnoBackend: Backend = {
+  start(payload, output, signal) {
     signal.throwIfAborted()
+    if (!payload || typeof payload !== 'object' || !('binary' in payload) || !(payload.binary instanceof Uint8Array)) {
+      throw new Error('Invalid WASI program')
+    }
+    const program = payload as WasiProgram
     if (!globalThis.crossOriginIsolated || typeof SharedArrayBuffer === 'undefined') {
       throw new Error('WASI requires cross-origin isolation (COOP/COEP headers)')
     }
@@ -63,6 +45,7 @@ export const runnoRuntime: WasiRuntime = {
     }
 
     return {
+      stdinChunkBytes: 8192 - 4,
       result,
       async write(text) {
         await waitForInput()

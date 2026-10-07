@@ -1,6 +1,7 @@
-import type { LanguageAdapter } from '../../session'
+import type { LanguageAdapter } from '../../core/types'
+import { wasiProgram } from '../../backends/wasi/types'
 import { runnoClang8 } from '../toolchains'
-import { executable, requireBinary, withSource } from '../c'
+import { requireBinary, withSource } from '../files'
 
 const SOURCE = '/main.cpp'
 const OBJECT = '/program.o'
@@ -14,7 +15,7 @@ export const cppAdapter: LanguageAdapter = {
     signal.throwIfAborted()
     const files = withSource(fs, SOURCE, source)
     const clang = requireBinary(files, '/clang.wasm')
-    const compiled = await execute({
+    const compiled = await execute(wasiProgram({
       binary: clang,
       args: [
         'clang', '-cc1', '-Werror', '-emit-obj', '-disable-free',
@@ -26,11 +27,11 @@ export const cppAdapter: LanguageAdapter = {
         '-x', 'c++', SOURCE
       ],
       fs: files
-    })
+    }))
     signal.throwIfAborted()
 
     const linker = requireBinary(compiled.fs, '/wasm-ld.wasm')
-    const linked = await execute({
+    const linked = await execute(wasiProgram({
       binary: linker,
       args: [
         'wasm-ld', '--no-threads', '--export-dynamic', '-z',
@@ -39,7 +40,7 @@ export const cppAdapter: LanguageAdapter = {
         '-lc', '-lc++', '-lc++abi', '-lm', '-o', OUTPUT
       ],
       fs: compiled.fs
-    })
-    return executable(linked.fs, OUTPUT)
+    }))
+    return wasiProgram({ binary: requireBinary(linked.fs, OUTPUT), fs: {} })
   }
 }
