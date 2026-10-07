@@ -1,0 +1,10 @@
+{
+  "id": "eclipse-ecj",
+  "version": "3.38.0",
+  "assets": [{
+    "path": "/ecj.jar",
+    "url": "ecj/3.38.0/97c566b120009c203a2fc8b291f4a9adbc171cf1ccb70f06f6b4e1828c00ce8e/ecj.jar",
+    "size": 3285717,
+    "sha256": "97c566b120009c203a2fc8b291f4a9adbc171cf1ccb70f06f6b4e1828c00ce8e"
+  }]
+}

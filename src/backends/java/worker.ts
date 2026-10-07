@@ -51,9 +51,9 @@ async function run(program: JavaProgram, options: CheerpJOptions) {
   cheerpOSAddStringFile('/str/bridge.jar', Uint8Array.from(atob(bridgeJar), char => char.charCodeAt(0)))
   let exitCode: number
   if (program.action === 'compile') {
-    cheerpOSAddStringFile('/str/javac.jar', program.compiler)
+    cheerpOSAddStringFile('/str/ecj.jar', program.compiler)
     cheerpOSAddStringFile('/str/Main.java', program.source)
-    exitCode = await cheerpjRunMain('codedang.runner.Bridge', '/str/bridge.jar:/str/javac.jar', 'compile')
+    exitCode = await cheerpjRunMain('codedang.runner.Bridge', '/str/bridge.jar:/str/ecj.jar', 'compile')
     if (exitCode === 0 && !jar) throw new Error('Java compiler did not produce a JAR')
   } else {
     cheerpOSAddStringFile('/str/main.jar', program.jar)

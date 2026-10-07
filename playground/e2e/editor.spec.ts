@@ -66,6 +66,30 @@ test('Java compiles and receives interactive stdin through CheerpJ', async ({ pa
   await expect(page.locator('#runner-container')).toContainText('Process ended with exit code: 0')
 })
 
+test('ECJ compiles Java 17 records, nested classes and lambda expressions', async ({ page }) => {
+  await selectLanguage(page, 'Java')
+  await setSource(page, `import java.util.List;
+public class Main {
+  record Item(int value) {}
+  public static void main(String[] args) {
+    var items = List.of(new Item(7), new Item(5));
+    System.out.println(items.stream().mapToInt(item -> item.value()).sum());
+  }
+}`)
+  await page.locator('#run').click()
+  await expect(page.locator('#runner-container')).toContainText('Process ended with exit code: 0')
+  await expect(page.locator('#runner-container')).toContainText('12')
+})
+
+test('ECJ reports Java syntax errors without executing', async ({ page }) => {
+  await selectLanguage(page, 'Java')
+  await setSource(page, 'public class Main { public static void main(String[] args) { int value = ; } }')
+  await page.locator('#run').click()
+  await expect(page.locator('#runner-container')).toContainText('Main.java:1:')
+  await expect(page.locator('#run')).toBeEnabled()
+  await expect(page.locator('#runner-container')).not.toContainText('Process ended with exit code: 0')
+})
+
 test('Ctrl+C stops and Ctrl+Enter starts a new execution', async ({ page }) => {
   await selectLanguage(page, 'Python3')
   await setSource(page, 'print("WAITING", flush=True)\ninput()\n')

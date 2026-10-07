@@ -38,8 +38,10 @@ Node.js 22 이상을 권장합니다. 준비 스크립트는 npm 패키지에서
 Runno의 LICENSE는 `RUNNO-LICENSE`로 함께 복사하지만, 각 컴파일러·인터프리터 자산의
 라이선스 및 소스 제공 조건은 별도로 확인해야 합니다.
 
-Java 백엔드·컴파일러 자산과 `npm run build:java`는 변경하지 않았습니다.
-Java를 사용하려면 기존 `java/assets/`의 자산도 같은 자산 URL 아래에 제공해야 합니다.
+Java 컴파일러는 ECJ 3.38.0을 사용합니다. 준비 단계에서 Maven Central의 고정된 JAR와
+대응 소스를 검증해 `.toolchains/java/`에 저장합니다. 배포 시 이 폴더의 파일도
+`assetBaseUrl` 아래에 같은 상대 경로로 게시합니다.
+S3 게시 workflow와 Bridge 재생성은 [src/languages/java/README.md](src/languages/java/README.md)를 참고합니다.
 
 ## 버전 갱신 및 검증
 

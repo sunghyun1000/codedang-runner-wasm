@@ -7,7 +7,8 @@ Java 테스트에는 CheerpJ 공식 CDN 접속이 필요합니다.
 프로덕션 배포 시 `/toolchains/`에 WASI·Java 공용 toolchain 자산을 별도로 제공하고 COOP/COEP 헤더를 설정해야 합니다.
 `dev:playground`와 `build:playground`는 npm의 `@runno/sandbox` 자산을 검증하고
 `.toolchains/runno/`에 준비합니다. Runno 자산의 npm 공급 패키지는 개발 의존성이며,
-브라우저에는 `@runno/wasi` 실행 코드만 포함합니다. Java 자산 경로는 변경하지 않습니다.
+브라우저에는 `@runno/wasi` 실행 코드만 포함합니다. Java 컴파일러는 Maven에서 검증해 준비한
+`.toolchains/java/`의 ECJ 자산을 같은 `/toolchains/` URL 아래에 제공합니다.
 
 ## 원본 코드
 

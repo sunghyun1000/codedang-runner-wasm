@@ -1,0 +1,13 @@
+Eclipse Compiler for Java (ECJ) 3.38.0
+Copyright Eclipse contributors. Licensed under EPL-2.0; see LICENSE.
+
+Unmodified binary:
+https://repo.maven.apache.org/maven2/org/eclipse/jdt/ecj/3.38.0/ecj-3.38.0.jar
+
+Corresponding source is provided alongside the compiler as ecj-sources.jar:
+https://repo.maven.apache.org/maven2/org/eclipse/jdt/ecj/3.38.0/ecj-3.38.0-sources.jar
+
+Upstream source:
+https://github.com/eclipse-jdt/eclipse.jdt.core/tree/6eb38a2431cb33876687312fddec8298f4ee9f6b/org.eclipse.jdt.core.compiler.batch
+
+ECJ's license applies to ECJ, not to this project's independently authored Bridge.java.

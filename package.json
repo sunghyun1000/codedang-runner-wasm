@@ -14,8 +14,9 @@
   ],
   "scripts": {
     "build:java": "node scripts/build-java-bridge.mjs",
-    "prepare:toolchains": "node scripts/prepare-runno-toolchains.mjs",
-    "test:toolchains": "node --test scripts/prepare-runno-toolchains.test.mjs",
+    "prepare:toolchains": "node scripts/prepare-toolchains.mjs",
+    "publish:java-toolchain": "node scripts/publish-java-toolchain.mjs",
+    "test:toolchains": "node --test scripts/*.test.mjs",
     "predev:playground": "npm run prepare:toolchains",
     "dev:playground": "vite --config playground/vite.config.ts",
     "check:playground": "tsc -p playground/tsconfig.json",
