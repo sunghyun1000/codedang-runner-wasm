@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import { fileURLToPath } from 'node:url'
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
+import tailwindcss from '@tailwindcss/vite'
 
 const toolchainDirectory = fileURLToPath(new URL('../runno/langs/', import.meta.url))
 const javaDirectory = fileURLToPath(new URL('../java/assets/', import.meta.url))
@@ -16,6 +17,9 @@ const availableAssets = new Set([
 
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
+  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  esbuild: { jsx: 'automatic' },
+  worker: { format: 'es' },
   server: {
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin',
@@ -23,7 +27,7 @@ export default defineConfig({
     },
     fs: { allow: [fileURLToPath(new URL('..', import.meta.url))] }
   },
-  plugins: [{
+  plugins: [tailwindcss(), {
     name: 'serve-runno-toolchains',
     configureServer(server) {
       server.middlewares.use('/runno/langs', async (request, response, next) => {

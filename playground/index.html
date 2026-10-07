@@ -3,52 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#111827" />
+    <meta name="theme-color" content="#222939" />
     <title>Codedang runner playground</title>
   </head>
   <body>
-    <main class="app">
-      <header>
-        <div>
-          <p class="eyebrow">BROWSER RUNNER · PLAYGROUND</p>
-          <h1>Browser runner sandbox</h1>
-          <p class="subtitle">Test the local connection, Worker, stdin and output without the Codedang frontend.</p>
-        </div>
-        <div class="actions">
-          <button id="run" class="primary">▶ Run</button>
-          <button id="stop" disabled>■ Stop</button>
-        </div>
-      </header>
-
-      <aside class="notice">
-        C, C++ and Python use Runno WASI. Java 17 uses CheerpJ from its official CDN. Enter Java code in a Main class. Send EOF with Ctrl+D in the stdin field.
-      </aside>
-
-      <section class="workspace">
-        <div class="panel editor-panel">
-          <div class="panel-title">
-            <label for="language">Language</label>
-            <select id="language" aria-label="Language">
-              <option value="C">C · C11</option>
-              <option value="Cpp">C++ · C++14</option>
-              <option value="Python3">Python 3 · 3.11</option>
-              <option value="Java">Java · 17 (CheerpJ)</option>
-            </select>
-          </div>
-          <textarea id="source" spellcheck="false" aria-label="Source code"></textarea>
-        </div>
-        <div class="panel terminal-panel">
-          <div class="panel-title"><span>Output</span><span id="status" class="status">Ready</span></div>
-          <pre id="output" aria-live="polite"></pre>
-          <form id="input-form">
-            <label for="stdin">stdin</label>
-            <input id="stdin" autocomplete="off" placeholder="Input sent to the running program" />
-            <button id="send" type="submit" disabled>Send</button>
-          </form>
-        </div>
-      </section>
-      <footer>Runno v0.10.6 · Execution stays in this browser · COOP/COEP required</footer>
-    </main>
-    <script type="module" src="/src/main.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

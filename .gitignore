@@ -7,4 +7,5 @@ playwright-report/
 # Test sources and configuration
 tests/
 playwright.config.ts
+!playground/playwright.config.ts
 vitest.config.ts
