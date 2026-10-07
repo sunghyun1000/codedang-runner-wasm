@@ -56,6 +56,17 @@ test('multiline stdin preserves blank lines and Ctrl+D sends EOF', async ({ page
 })
 
 test('Java compiles and receives interactive stdin through CheerpJ', async ({ page }) => {
+  let phase = 0
+  const compilerRanges = new Set<string>()
+  const repeatedRuntimeRanges: string[] = []
+  page.on('request', request => {
+    if (request.url().endsWith('/4.3/loader.js')) phase++
+    if (!request.url().endsWith('/4.3/17/lib/modules')) return
+    const range = request.headers()['range']
+    if (!range) return
+    if (phase === 1) compilerRanges.add(range)
+    else if (phase === 2 && compilerRanges.has(range)) repeatedRuntimeRanges.push(range)
+  })
   await selectLanguage(page, 'Java')
   await page.locator('#run').click()
   await expect(page.locator('#runner-container')).toContainText('Enter your name:')
@@ -64,6 +75,14 @@ test('Java compiles and receives interactive stdin through CheerpJ', async ({ pa
   await page.keyboard.press('Enter')
   await expect(page.locator('#runner-container')).toContainText('Hello, Codedang!')
   await expect(page.locator('#runner-container')).toContainText('Process ended with exit code: 0')
+  expect(phase).toBe(2)
+  expect(compilerRanges.size).toBeGreaterThan(0)
+  expect(repeatedRuntimeRanges).toEqual([])
+  const cachedRanges = await page.evaluate(async () => {
+    const cache = await caches.open('codedang-cheerpj-runtime-v1')
+    return (await cache.keys()).filter(request => request.url.includes('/17/lib/modules')).length
+  })
+  expect(cachedRanges).toBeGreaterThan(0)
 })
 
 test('ECJ compiles Java 17 records, nested classes and lambda expressions', async ({ page }) => {

@@ -2,9 +2,10 @@ import workerUrl from './worker?worker&url'
 import type { Backend, ExecutionResult } from '../../core/types'
 import type { CheerpJOptions, JavaProgram, JavaWorkerResponse } from './types'
 import { defaultCheerpJOptions } from '../../config'
+import type { LoaderOptions } from '../../toolchains/loader'
 export { defaultCheerpJOptions } from '../../config'
 
-export function createCheerpJBackend(options: CheerpJOptions = {}): Backend {
+export function createCheerpJBackend(options: CheerpJOptions = {}, assets: LoaderOptions = {}): Backend {
   return {
     start(payload, output, signal) {
       signal.throwIfAborted()
@@ -71,7 +72,7 @@ export function createCheerpJBackend(options: CheerpJOptions = {}): Backend {
         worker.postMessage({ type: 'start', program, options: {
           ...defaultCheerpJOptions, ...options,
           loaderUrl
-        } })
+        }, assets })
       } catch (error) { rejectResult!(error); cleanup() }
       return {
         stdinChunkBytes: 8192,

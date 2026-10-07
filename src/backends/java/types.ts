@@ -1,4 +1,5 @@
 import type { CheerpJOptions } from '../../config'
+import type { LoaderOptions } from '../../toolchains/loader'
 export type { CheerpJOptions } from '../../config'
 
 export type JavaProgram =
@@ -6,7 +7,7 @@ export type JavaProgram =
   | { action: 'run'; jar: Uint8Array }
 
 export type JavaWorkerRequest =
-  | { type: 'start'; program: JavaProgram; options: CheerpJOptions }
+  | { type: 'start'; program: JavaProgram; options: CheerpJOptions; assets?: LoaderOptions }
   | { type: 'input'; data: string; id: number }
   | { type: 'eof' }
 

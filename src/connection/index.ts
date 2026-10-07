@@ -33,7 +33,9 @@ class LocalRunnerConnection implements RunnerConnection {
       ...options,
       assetBaseUrl: options.assetBaseUrl ?? (globalThis.location ? defaultAssetBaseUrl : undefined),
       languages: { ...codedangLanguages, ...options.languages },
-      backends: { wasi: runnoBackend, java: createCheerpJBackend(options.java), ...options.backends }
+      backends: { wasi: runnoBackend, java: createCheerpJBackend(options.java, {
+        cache: options.cache, maxAssetBytes: options.maxAssetBytes
+      }), ...options.backends }
     }, message => this.deliver(message), () => this.closed())
     queueMicrotask(() => {
       if (this.readyState !== ConnectionState.CONNECTING) return

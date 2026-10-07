@@ -23,6 +23,26 @@ ECJ 3.38.0의 JAR manifest는 `JavaSE-17`을 요구하며 클래스 파일 버�
 브라우저는 Maven에 직접 접속하지 않고 `assetBaseUrl`에서 컴파일러를 가져온다.
 크기·해시 검증 및 Cache Storage 정책은 WASI와 동일하다.
 
+### CheerpJ 런타임 캐시
+
+`ToolchainLoader.runtimeFetch()`는 CheerpJ Worker에서 초기화 전에 설치된다.
+CheerpJ의 fetch 기반 런타임 요청을 loader URL의 디렉터리 범위에서만 관리하며,
+`modules` 등 동일한 URL·Range 응답을 `codedang-cheerpj-runtime-v1` Cache Storage에 저장한다.
+컴파일 Worker가 종료되어도 실행 Worker와 이후 실행에서 같은 구간을 재사용한다.
+206 응답은 내부적으로 200 응답으로 저장한 뒤 원래 상태·Content-Range·URL을 복원한다.
+캐시 쓰기가 완료된 뒤 응답을 전달하여 Worker 종료로 저장이 중단되는 것을 피한다.
+
+`createLocalRunnerConnection({ cache: false })`로 런타임 캐시도 끌 수 있다.
+백엔드를 직접 등록할 때는 `createCheerpJBackend(javaOptions, loaderOptions)`의 두 번째
+인자로 캐시 설정과 응답별 `maxAssetBytes`를 전달한다. 저장소 사용 불가·용량 초과 시에는
+원래 네트워크 응답으로 계속 실행한다.
+
+이는 런타임 전체 사전 다운로드나 JVM 재사용이 아니라 요청된 구간의 영속 캐시다.
+서로 다른 Range를 합치거나 포함 관계를 계산하지 않는다. `importScripts`로 로딩하는
+로더·JS 파일 및 XMLHttpRequest는 기존 브라우저 HTTP 캐시를 사용한다.
+ECJ와 달리 CheerpJ 자산에는 프로젝트의 고정 SHA-256 manifest를 적용하지 않으며,
+공식 CDN의 HTTPS·버전별 URL에 의존한다. 캐시는 브라우저가 삭제할 수 있다.
+
 ```ts
 createLocalRunnerConnection({
   assetBaseUrl: 'https://assets.example.com/toolchains/',

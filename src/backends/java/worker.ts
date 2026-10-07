@@ -1,5 +1,6 @@
 import { bridgeJar } from './bridge.generated'
 import type { JavaProgram, JavaWorkerRequest, JavaWorkerResponse, CheerpJOptions } from './types'
+import { ToolchainLoader, type LoaderOptions } from '../../toolchains/loader'
 
 declare function cheerpjInit(options: Record<string, unknown>): Promise<void>
 declare function cheerpOSAddStringFile(path: string, content: string | Uint8Array): void
@@ -18,13 +19,14 @@ self.onmessage = (event: MessageEvent<JavaWorkerRequest>) => {
   if (message.type === 'eof') { inputEnded = true; wake?.() }
   if (message.type === 'start' && !started) {
     started = true
-    void run(message.program, message.options).catch(error => {
+    void run(message.program, message.options, message.assets).catch(error => {
       send({ type: 'error', error: error instanceof Error ? error.message : String(error) })
     })
   }
 }
 
-async function run(program: JavaProgram, options: CheerpJOptions) {
+async function run(program: JavaProgram, options: CheerpJOptions, assets?: LoaderOptions) {
+  self.fetch = new ToolchainLoader(assets).runtimeFetch(options.loaderUrl!)
   let jar: Uint8Array | undefined
   await cheerpjInit({
     version: 17, status: 'none', licenseKey: options.licenseKey,

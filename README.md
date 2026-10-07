@@ -41,6 +41,9 @@ Runno의 LICENSE는 `RUNNO-LICENSE`로 함께 복사하지만, 각 컴파일러�
 Java 컴파일러는 ECJ 3.38.0을 사용합니다. 준비 단계에서 Maven Central의 고정된 JAR와
 대응 소스를 검증해 `.toolchains/java/`에 저장합니다. 배포 시 이 폴더의 파일도
 `assetBaseUrl` 아래에 같은 상대 경로로 게시합니다.
+CheerpJ의 fetch 기반 런타임 자산도 `ToolchainLoader`가 관리합니다. 동일 URL·Range 응답은
+별도 Cache Storage에 보관하여 컴파일·실행 Worker와 이후 실행에서 재사용합니다.
+전체 런타임 사전 다운로드는 아니며, `cache: false`로 비활성화할 수 있습니다.
 S3 게시 workflow와 Bridge 재생성은 [src/languages/java/README.md](src/languages/java/README.md)를 참고합니다.
 
 ## 버전 갱신 및 검증
