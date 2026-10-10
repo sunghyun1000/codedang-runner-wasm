@@ -3,8 +3,8 @@ import { RunnerSession } from '../core/runner'
 import type { RunnerOptions } from '../core/types'
 import { codedangLanguages } from '../languages'
 import { runnoBackend } from '../backends/wasi/runno'
-import { createCheerpJBackend } from '../backends/java/cheerpj'
 import { defaultAssetBaseUrl } from '../config'
+import { createTeaVMBackend } from '../backends/java/teavm'
 
 export const ConnectionState = { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 } as const
 
@@ -33,9 +33,11 @@ class LocalRunnerConnection implements RunnerConnection {
       ...options,
       assetBaseUrl: options.assetBaseUrl ?? (globalThis.location ? defaultAssetBaseUrl : undefined),
       languages: { ...codedangLanguages, ...options.languages },
-      backends: { wasi: runnoBackend, java: createCheerpJBackend(options.java, {
-        cache: options.cache, maxAssetBytes: options.maxAssetBytes
-      }), ...options.backends }
+      backends: {
+        wasi: runnoBackend,
+        java: createTeaVMBackend(),
+        ...options.backends
+      }
     }, message => this.deliver(message), () => this.closed())
     queueMicrotask(() => {
       if (this.readyState !== ConnectionState.CONNECTING) return

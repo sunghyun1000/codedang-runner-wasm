@@ -15,7 +15,7 @@ const examples: Record<Language, string> = {
   C: '#include <stdio.h>\n\nint main(void) {\n  printf("Hello from C!\\n");\n  return 0;\n}\n',
   Cpp: '#include <iostream>\n\nint main() {\n  std::cout << "Hello from C++!\\n";\n  return 0;\n}\n',
   Python3: 'print("Hello from Python 3!")\n',
-  Java: 'import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println("Hello from Java 17! Enter your name:");\n    Scanner input = new Scanner(System.in);\n    if (input.hasNextLine()) {\n      System.out.println("Hello, " + input.nextLine() + "!");\n    }\n  }\n}\n'
+  Java: 'import java.util.Scanner;\n\npublic class Main {\n  public static void main(String[] args) {\n    System.out.println("Hello from Java! Enter your name:");\n    Scanner input = new Scanner(System.in);\n    if (input.hasNextLine()) {\n      System.out.println("Hello, " + input.nextLine() + "!");\n    }\n  }\n}\n'
 }
 
 export function EditorLayout() {
@@ -64,7 +64,7 @@ export function EditorLayout() {
               <article className="space-y-6 p-8 text-sm leading-7 text-slate-300">
                 <h2 className="text-2xl font-semibold text-white">Browser runner playground</h2>
                 <p>Codedang 에디터에서 코드를 작성하고 Run을 눌러 브라우저 안에서 실행하세요. 서버 제출과 채점은 연결하지 않습니다.</p>
-                <section><h3 className="mb-2 text-lg text-white">Language</h3><p>C · C11 / C++ · C++14 / Python · 3.11 / Java · 17</p><p>C, C++, Python은 Runno WASI, Java는 CheerpJ 4.3을 사용합니다. 첫 실행에는 런타임 다운로드가 필요합니다.</p></section>
+                <section><h3 className="mb-2 text-lg text-white">Language</h3><p>C · C11 / C++ · C++14 / Python · 3.11 / Java · TeaVM</p><p>C, C++, Python은 Runno WASI, Java는 브라우저 javac + TeaVM WasmGC로 실행됩니다. Scanner와 BufferedReader의 실시간 콘솔 입력을 지원합니다. Java 표준 라이브러리는 부분 지원입니다.</p></section>
                 <section><h3 className="mb-2 text-lg text-white">Input / Output</h3><p>Run Code 터미널에 입력하고 Enter로 전송합니다. 여러 줄 붙여넣기와 빈 줄 입력도 가능합니다.</p><ul className="list-inside list-disc"><li>Ctrl/Cmd + Enter: Run</li><li>Ctrl + C: 실행 중단</li><li>Ctrl + D: stdin EOF</li></ul></section>
                 <section><h3 className="mb-2 text-lg text-white">Limits</h3><p>최대 실행 시간 180초. 프로그램은 별도 Worker에서 실행됩니다. Reset, Save, Test, Submit은 비활성 상태입니다.</p></section>
               </article>

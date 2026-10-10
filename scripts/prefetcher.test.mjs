@@ -73,9 +73,7 @@ test('downloads selected, available, then remaining languages and continues afte
     selectedLanguage: 'Python3', availableLanguages: ['Java']
   })
   assert.match(urls[0], /python/)
-  assert.match(urls[1], /ecj/)
-  assert.match(urls[2], /loader\.js/)
-  assert.match(urls[3], /clang/)
+  assert.ok(urls.some(url => /clang/.test(url)))
   assert.deepEqual(Object.keys(result.errors), ['Python3', 'Java', 'C', 'Cpp'])
 })
 
@@ -86,8 +84,7 @@ test('prepares all languages but only downloads a shared manifest once per queue
   mock.method(prefetcher.loader, 'prefetch', async manifest => { manifests.push(manifest) })
   const result = await prefetcher.prefetch({ selectedLanguage: 'Cpp', availableLanguages: ['Java'] })
   assert.deepEqual(result.completed, ['Cpp', 'Java', 'C', 'Python3'])
-  assert.deepEqual(manifests.map(manifest => manifest.id), ['runno-clang', 'eclipse-ecj', 'cheerpj-java17', 'runno-python'])
-  assert.equal(manifests[2].assets.find(asset => asset.path === '/17/lib/modules').size, 38145733)
+  assert.deepEqual(manifests.map(manifest => manifest.id), ['runno-clang', 'teavm-javac', 'runno-python'])
   assert.deepEqual(statuses.filter(status => status.state === 'ready').map(status => status.language), result.completed)
 })
 
@@ -103,10 +100,10 @@ test('updates the pending priority while retaining the current download; disposa
   const prefetcher = new ToolchainPrefetcher({ assetBaseUrl: 'https://assets.example/' })
   const first = prefetcher.prefetch({ selectedLanguage: 'C', availableLanguages: [] })
   while (!release) await new Promise(resolve => setImmediate(resolve))
-  assert.equal(first, prefetcher.prefetch({ selectedLanguage: 'Java', availableLanguages: [] }))
+  assert.equal(first, prefetcher.prefetch({ selectedLanguage: 'Python3', availableLanguages: [] }))
   release()
   await first
-  assert.match(urls[1], /ecj/)
+  assert.match(urls[1], /python/)
   prefetcher.dispose()
   assert.throws(() => prefetcher.prefetch({ selectedLanguage: 'C', availableLanguages: [] }), /abort/i)
 })

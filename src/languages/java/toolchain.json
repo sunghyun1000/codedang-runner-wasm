@@ -1,10 +1,13 @@
 {
-  "id": "eclipse-ecj",
-  "version": "3.38.0",
-  "assets": [{
-    "path": "/ecj.jar",
-    "url": "ecj/3.38.0/97c566b120009c203a2fc8b291f4a9adbc171cf1ccb70f06f6b4e1828c00ce8e/ecj.jar",
-    "size": 3285717,
-    "sha256": "97c566b120009c203a2fc8b291f4a9adbc171cf1ccb70f06f6b4e1828c00ce8e"
-  }]
+  "id": "teavm-javac",
+  "version": "208d4c97a602ba0df055f16e6882059fb69d0122",
+  "assets": [
+    { "path": "/scanner-sdk.bin", "url": "java/teavm-javac/scanner-sdk.bin", "size": 6403, "sha256": "9ce99edbab66863269cf95a874ff97b9e512640a9917f2fc3b88d06bc1d7e9f6" },
+    { "path": "/scanner-runtime.bin", "url": "java/teavm-javac/scanner-runtime.bin", "size": 6469, "sha256": "e90235a9d6bdff4881485ffcf362b404ba6f9474adb984da8dbf62e98679768b" },
+    { "path": "/runtime-compat.bin", "url": "java/teavm-javac/runtime-compat.bin", "size": 2139, "sha256": "5c1719d421630c509af9d7ace98619d25bf69769bf71e767b6568c8a541d28cc" },
+    { "path": "/compiler.wasm", "url": "java/teavm-javac/compiler.wasm", "size": 4707682, "sha256": "214eb62bbf1219b0d450292110cc421a823bbe8f5dfafea5c1d6bedeff2e448b" },
+    { "path": "/compiler.wasm-runtime.js", "url": "java/teavm-javac/compiler.wasm-runtime.js", "size": 16425, "sha256": "d4fc035b410f444f79f49e3890643b8bfd644a02dcfc597e3fcaa8a07bafca08" },
+    { "path": "/compile-classlib-teavm.bin", "url": "java/teavm-javac/compile-classlib-teavm.bin", "size": 215262, "sha256": "0fb15e2553072123664decb091302d486a7d3628ef8c84a3e51dc080996d2d8d" },
+    { "path": "/runtime-classlib-teavm.bin", "url": "java/teavm-javac/runtime-classlib-teavm.bin", "size": 2296270, "sha256": "22c1bbcb6544b618f597fb8c8003ff8b5819a62209f851ba1b0dc5d154a6cfc6" }
+  ]
 }

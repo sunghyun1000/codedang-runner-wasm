@@ -1,8 +1,6 @@
 import { codedangLanguages } from '../languages'
 import { defaultAssetBaseUrl } from '../config'
-import type { CheerpJOptions } from '../config'
 import { ToolchainLoader, type LoaderOptions } from './loader'
-import { cheerpjManifest } from './cheerpj-manifest'
 import type { ToolchainManifest } from './manifest'
 
 export interface PrefetchContext {
@@ -29,7 +27,6 @@ export class ToolchainPrefetcher {
   private active?: Promise<PrefetchResult>
 
   constructor(private readonly options: LoaderOptions & {
-    java?: CheerpJOptions
     onStatus?: (status: PrefetchStatus) => void
   } = {}) {
     this.loader = new ToolchainLoader({
@@ -65,7 +62,6 @@ export class ToolchainPrefetcher {
       const manifests: ToolchainManifest[] = []
       const toolchain = codedangLanguages[language].toolchain
       if (toolchain) manifests.push(toolchain)
-      if (language === 'Java') manifests.push(cheerpjManifest(this.options.java?.loaderUrl))
       for (const manifest of manifests) {
         try {
           const key = JSON.stringify(manifest)
