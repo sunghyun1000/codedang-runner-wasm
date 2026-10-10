@@ -13,9 +13,8 @@
     "dist"
   ],
   "scripts": {
-    "build:java": "node scripts/build-java-bridge.mjs",
+    "build:java": "node scripts/build-teavm-javac.mjs",
     "prepare:toolchains": "node scripts/prepare-toolchains.mjs",
-    "publish:java-toolchain": "node scripts/publish-java-toolchain.mjs",
     "test:toolchains": "node --test scripts/*.test.mjs",
     "predev:playground": "npm run prepare:toolchains",
     "dev:playground": "vite --config playground/vite.config.ts",

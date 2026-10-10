@@ -4,6 +4,9 @@ Codedang의 기존 코드 러너를 브라우저에서 실행할 수 있도록 W
 
 
 WASM 프로그램 실행에는 Runno의 WASI 구현을 활용합니다.
+Java는 순정 teavm-javac를 브라우저에서 실행해 WasmGC로 컴파일합니다.
+Scanner·BufferedReader의 실시간 stdin/EOF를 지원합니다. Java 표준 API는 부분 지원입니다.
+자산 준비·빌드·지원 범위는 [Java runner 문서](src/languages/java/README.md)를 참고하세요.
 
 Runno는 Git subtree 대신 npm 의존성으로 사용합니다.
 
@@ -19,6 +22,7 @@ Runno는 Git subtree 대신 npm 의존성으로 사용합니다.
 
 ```sh
 npm ci
+JAVA_HOME=/path/to/jdk-25 npm run build:java # Java 자산이 없을 때만
 npm run prepare:toolchains
 ```
 
@@ -31,21 +35,12 @@ Node.js 22 이상을 권장합니다. 준비 스크립트는 npm 패키지에서
 자산 준비를 자동으로 먼저 실행합니다. CI 빌드 단계에서는 개발 의존성까지 설치해야 합니다.
 
 배포 시 `.toolchains/runno/`의 자산을 `assetBaseUrl` 아래에 게시합니다.
-플레이그라운드는 WASI·Java 공용 자산 URL인 `/toolchains/`를 사용합니다.
+플레이그라운드는 WASI·Java 자산 URL인 `/toolchains/`를 사용합니다.
 이 기본 경로는 `src/config.ts`의 연결 설정에만 정의합니다.
 `ToolchainLoader` 또는 `RunnerSession`을 직접 사용하는 경우에는 상대 자산 URL에 대해
 `assetBaseUrl`을 명시해야 합니다. 절대 자산 URL은 base 없이도 사용할 수 있습니다.
 Runno의 LICENSE는 `RUNNO-LICENSE`로 함께 복사하지만, 각 컴파일러·인터프리터 자산의
 라이선스 및 소스 제공 조건은 별도로 확인해야 합니다.
-
-Java 컴파일러는 ECJ 3.38.0을 사용합니다. 준비 단계에서 Maven Central의 고정된 JAR와
-대응 소스를 검증해 `.toolchains/java/`에 저장합니다. 배포 시 이 폴더의 파일도
-`assetBaseUrl` 아래에 같은 상대 경로로 게시합니다.
-CheerpJ의 fetch 기반 런타임 자산도 `ToolchainLoader`가 관리합니다. 동일 URL·Range 응답은
-별도 Cache Storage에 보관하여 컴파일·실행 Worker와 이후 실행에서 재사용합니다.
-`ToolchainPrefetcher`로 Java 17 표준 라이브러리 전체를 사전 캐시하면 Range 요청도
-그 파일에서 제공합니다. `cache: false`로 실행 중 캐시를 비활성화할 수 있습니다.
-S3 게시 workflow와 Bridge 재생성은 [src/languages/java/README.md](src/languages/java/README.md)를 참고합니다.
 
 ## 브라우저 자산 사전 캐시 API
 
@@ -56,8 +51,8 @@ const prefetcher = new ToolchainPrefetcher({ assetBaseUrl: '/toolchains/' })
 
 // await하지 않아도 다운로드는 백그라운드에서 진행됩니다.
 const result = await prefetcher.prefetch({
-  selectedLanguage: 'Java',
-  availableLanguages: ['C', 'Cpp', 'Java', 'Python3']
+  selectedLanguage: 'Python3',
+  availableLanguages: ['C', 'Cpp', 'Python3']
 })
 console.log(result.completed, result.errors)
 
@@ -70,13 +65,6 @@ console.log(result.completed, result.errors)
 아카이브는 압축 상태로 저장하고 실행할 때 해제합니다. 캐시의 실제 크기·SHA-256이
 manifest와 같으면 유지하고, 없거나 손상되었거나 manifest 해시가 바뀌면 다시 다운로드합니다.
 다운로드 결과도 검증하며, 일치하지 않는 파일은 저장하지 않습니다.
-
-CheerpJ 자산 목록·해시는 `src/toolchains/cheerpj-manifest.ts`에 고정합니다.
-다른 버전으로 갱신할 때는 이 manifest도 함께 갱신해야 합니다. 전체 Java 17 표준 라이브러리는
-약 36.4 MiB이며 모든 내장 언어를 처음 준비하면 약 118 MiB를 다운로드합니다.
-GUI·폰트 등 콘솔 실행 manifest 밖의 CheerpJ 리소스는 필요 시 기존 네트워크 경로를 사용합니다.
-JS import/importScripts와 XMLHttpRequest는 브라우저 HTTP 캐시를 사용하므로 완전한 오프라인
-실행을 보장하는 API는 아닙니다.
 
 사전 준비는 Cache Storage 사용 가능한 보안 컨텍스트(HTTPS 또는 localhost)가 필요합니다.
 저장 공간 부족 등은 `result.errors`에 반환하고 다른 언어 준비는 계속합니다.

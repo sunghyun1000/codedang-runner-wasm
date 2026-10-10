@@ -1,6 +1,5 @@
 import type { LoaderOptions } from '../toolchains/loader'
 import type { ToolchainManifest } from '../toolchains/manifest'
-import type { CheerpJOptions } from '../config'
 
 /** Portable files supplied to a language adapter, independent of its engine. */
 export type FileSystem = Record<string, {
@@ -63,7 +62,6 @@ export interface LanguageAdapter {
 }
 
 export interface RunnerOptions extends LoaderOptions {
-  java?: CheerpJOptions
   languages?: Readonly<Record<string, LanguageAdapter>>
   backends?: Readonly<Record<string, Backend>>
   timeoutMs?: number

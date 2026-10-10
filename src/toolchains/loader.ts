@@ -2,7 +2,6 @@ import type { FileSystem } from '../core/types'
 import { Tarball } from '@obsidize/tar-browserify'
 import { inflate } from 'pako'
 import { validateManifest, type ToolchainManifest } from './manifest'
-import { createRuntimeFetch } from './runtime-cache'
 
 export interface LoaderOptions {
   /** Required for relative asset URLs; no backend-specific default is applied. */
@@ -15,11 +14,6 @@ export interface LoaderOptions {
 
 export class ToolchainLoader {
   constructor(private readonly options: LoaderOptions = {}) {}
-
-  /** Install in a CheerpJ Worker before initialization; only its runtime URL subtree is cached. */
-  runtimeFetch(loaderUrl: string, network?: typeof fetch): typeof fetch {
-    return createRuntimeFetch(loaderUrl, this.options, network)
-  }
 
   async load(manifest: ToolchainManifest, signal: AbortSignal): Promise<FileSystem> {
     return this.prepare(manifest, signal, true)

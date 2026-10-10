@@ -1,69 +1,97 @@
-import { bridgeJar } from './bridge.generated'
-import type { JavaProgram, JavaWorkerRequest, JavaWorkerResponse, CheerpJOptions } from './types'
-import { ToolchainLoader, type LoaderOptions } from '../../toolchains/loader'
+import type { JavaProgram } from './teavm'
+import { javaBootstrap } from '../../languages/java/bootstrap'
+import { annotationSdkOverlay } from '../../languages/java/sdk-overlay'
+import { redirectJavaStdin } from '../../languages/java/redirect-stdin'
 
-declare function cheerpjInit(options: Record<string, unknown>): Promise<void>
-declare function cheerpOSAddStringFile(path: string, content: string | Uint8Array): void
-declare function cheerpjRunMain(className: string, classPath: string, ...args: string[]): Promise<number>
+const send = (type: string, data: string) => self.postMessage({ type, data })
 
-const send = (message: JavaWorkerResponse) => self.postMessage(message)
-const chunks: { id: number; data: string }[] = []
-let inputEnded = false
-let wake: (() => void) | undefined
-let started = false
-const decoders = { stdout: new TextDecoder(), stderr: new TextDecoder() }
-
-self.onmessage = (event: MessageEvent<JavaWorkerRequest>) => {
-  const message = event.data
-  if (message.type === 'input' && !inputEnded) { chunks.push(message); wake?.() }
-  if (message.type === 'eof') { inputEnded = true; wake?.() }
-  if (message.type === 'start' && !started) {
-    started = true
-    void run(message.program, message.options, message.assets).catch(error => {
-      send({ type: 'error', error: error instanceof Error ? error.message : String(error) })
-    })
-  }
+self.onmessage = ({ data }: MessageEvent<{ program: JavaProgram; input: SharedArrayBuffer }>) => {
+  void run(data).catch(error => {
+    console.error(error)
+    self.postMessage({ type: 'error', error: String(error) })
+  })
 }
 
-async function run(program: JavaProgram, options: CheerpJOptions, assets?: LoaderOptions) {
-  self.fetch = new ToolchainLoader(assets).runtimeFetch(options.loaderUrl!)
-  let jar: Uint8Array | undefined
-  await cheerpjInit({
-    version: 17, status: 'none', licenseKey: options.licenseKey,
-    javaProperties: ['file.encoding=UTF-8', 'java.awt.headless=true'],
-    natives: {
-      async Java_codedang_runner_Bridge_readInput() {
-        while (!chunks.length && !inputEnded) await new Promise<void>(resolve => { wake = resolve })
-        wake = undefined
-        const chunk = chunks.shift()
-        if (!chunk) return null
-        send({ type: 'input_consumed', id: chunk.id })
-        return chunk.data
-      },
-      async Java_codedang_runner_Bridge_writeOutput(_lib: unknown, bytes: Int8Array, offset: number, length: number, stderr: boolean) {
-        const type = stderr ? 'stderr' : 'stdout'
-        const data = decoders[type].decode(new Uint8Array(bytes.buffer, bytes.byteOffset + offset, length), { stream: true })
-        if (data) send({ type, data })
-      },
-      async Java_codedang_runner_Bridge_compiled(_lib: unknown, bytes: Int8Array) {
-        jar = new Uint8Array(bytes)
+async function run({ program, input }: { program: JavaProgram; input: SharedArrayBuffer }) {
+  // Import the hash-verified upstream loader verbatim; no runtime patching.
+  const runtimeBytes = program.action === 'compile' ? program.fs['/compiler.wasm-runtime.js'] : undefined
+  const runtime = program.action === 'run' ? program.runtime
+    : runtimeBytes?.mode === 'binary' ? runtimeBytes.content : undefined
+  if (!runtime) throw new Error('Missing TeaVM runtime loader')
+  const runtimeUrl = URL.createObjectURL(new Blob([runtime as Uint8Array<ArrayBuffer>], { type: 'text/javascript' }))
+  let load
+  try { ({ load } = await import(/* @vite-ignore */ runtimeUrl)) }
+  finally { URL.revokeObjectURL(runtimeUrl) }
+  if (program.action === 'compile') {
+    const binary = (path: string) => {
+      const file = program.fs[path]
+      if (!file || file.mode !== 'binary') throw new Error(`Missing Java asset: ${path}`)
+      return new Int8Array(file.content)
+    }
+    const runtime = await load(binary('/compiler.wasm'))
+    const compiler = runtime.exports.createCompiler()
+    compiler.setSdk(binary('/compile-classlib-teavm.bin'))
+    compiler.setSdk(Int8Array.from(atob(annotationSdkOverlay), char => char.charCodeAt(0)))
+    compiler.setSdk(binary('/scanner-sdk.bin'))
+    compiler.setTeaVMClasslib(binary('/runtime-classlib-teavm.bin'))
+    compiler.setTeaVMClasslib(binary('/runtime-compat.bin'))
+    compiler.setTeaVMClasslib(binary('/scanner-runtime.bin'))
+    compiler.onDiagnostic((diagnostic: { fileName: string; lineNumber: number; message: string }) => {
+      send('stderr', `${diagnostic.fileName ?? 'TeaVM'}:${diagnostic.lineNumber}: ${diagnostic.message}\n`)
+    })
+    compiler.addSourceFile('Main.java', program.source)
+    compiler.addSourceFile('CodedangBootstrap.java', javaBootstrap)
+    const compiled = compiler.compile()
+    if (compiled) {
+      for (const path of compiler.listOutputFiles()) {
+        if (path.endsWith('.class')) compiler.addOutputClassFile(path,
+          new Int8Array(redirectJavaStdin(new Uint8Array(compiler.getOutputFile(path)))))
       }
     }
+    if (!compiled || !compiler.generateWebAssembly({ outputName: 'app', mainClass: 'CodedangBootstrap' })) {
+      self.postMessage({ type: 'result', result: { exitCode: 1, fs: {} } })
+      return
+    }
+    const bytes = new Uint8Array(compiler.getWebAssemblyOutputFile('app.wasm'))
+    const date = new Date(0)
+    self.postMessage({ type: 'result', result: { exitCode: 0, fs: {
+      '/program.wasm': { path: '/program.wasm', mode: 'binary', content: bytes,
+        timestamps: { access: date, modification: date, change: date } }
+    } } })
+    return
+  }
+  const state = new Int32Array(input, 0, 1)
+  const bytes = new Uint8Array(input, 4)
+  let offset = 0
+  const pending = { stdout: '', stderr: '' }
+  const flush = () => {
+    for (const type of ['stdout', 'stderr'] as const) {
+      if (pending[type]) { send(type, pending[type]); pending[type] = '' }
+    }
+  }
+  Object.assign(globalThis, {
+    codedangRead() {
+      flush() // Prompts without a newline must be visible before blocking.
+      let size: number
+      while ((size = Atomics.load(state, 0)) === 0) Atomics.wait(state, 0, 0)
+      if (size === -1) return -1
+      const value = bytes[offset++]
+      if (offset === size) { offset = 0; Atomics.store(state, 0, 0); Atomics.notify(state, 0) }
+      return value
+    },
+    codedangAvailable() { return Math.max(0, Atomics.load(state, 0) - offset) }
   })
-  cheerpOSAddStringFile('/str/bridge.jar', Uint8Array.from(atob(bridgeJar), char => char.charCodeAt(0)))
-  let exitCode: number
-  if (program.action === 'compile') {
-    cheerpOSAddStringFile('/str/ecj.jar', program.compiler)
-    cheerpOSAddStringFile('/str/Main.java', program.source)
-    exitCode = await cheerpjRunMain('codedang.runner.Bridge', '/str/bridge.jar:/str/ecj.jar', 'compile')
-    if (exitCode === 0 && !jar) throw new Error('Java compiler did not produce a JAR')
-  } else {
-    cheerpOSAddStringFile('/str/main.jar', program.jar)
-    exitCode = await cheerpjRunMain('codedang.runner.Bridge', '/str/bridge.jar', 'run')
+  const character = (type: 'stdout' | 'stderr', value: number) => {
+    pending[type] += String.fromCharCode(value)
+    if (value === 10 || pending[type].length >= 1024 && !(value >= 0xd800 && value <= 0xdbff)) flush()
   }
-  for (const type of ['stdout', 'stderr'] as const) {
-    const data = decoders[type].decode()
-    if (data) send({ type, data })
-  }
-  send({ type: 'result', exitCode, jar })
+  const application = await load(program.binary, { installImports(imports: Record<string, unknown>) {
+    imports.teavmConsole = {
+      putcharStdout: (value: number) => character('stdout', value),
+      putcharStderr: (value: number) => character('stderr', value)
+    }
+  } })
+  try { await application.exports.main([]) }
+  finally { flush() }
+  self.postMessage({ type: 'result', result: { exitCode: 0, fs: {} } })
 }

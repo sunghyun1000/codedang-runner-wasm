@@ -1,9 +1,0 @@
-{
-  "compiler": "https://repo.maven.apache.org/maven2/org/eclipse/jdt/ecj/3.38.0/ecj-3.38.0.jar",
-  "sources": {
-    "url": "https://repo.maven.apache.org/maven2/org/eclipse/jdt/ecj/3.38.0/ecj-3.38.0-sources.jar",
-    "size": 2357386,
-    "sha256": "4e94dd8870516e3e00e0259a83db1e187db86b5a3d16d287fb089f2f5cefd43a"
-  },
-  "license": "EPL-2.0"
-}
